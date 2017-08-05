@@ -56,6 +56,7 @@
 
 #![deny(warnings)]
 
+use std::cmp;
 use std::fmt;
 use std::mem;
 
@@ -316,6 +317,55 @@ impl<'a> IntoIterator for &'a Histogram {
 impl fmt::Debug for Histogram {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({} total)", self.data.counters.entries_total)
+    }
+}
+
+impl fmt::Display for Histogram {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let num_samples = self.entries();
+        writeln!(f, "# Number of samples = {}", num_samples)?;
+        if num_samples == 0 {
+            return Ok(());
+        }
+
+        let min = self.minimum().unwrap();
+        let max = self.maximum().unwrap();
+
+        writeln!(f, "# Minimum = {}", min)?;
+        writeln!(f, "# Maximum = {}", max)?;
+        writeln!(f, "#")?;
+
+        let mean = self.mean().unwrap();
+        let dev = self.stddev().unwrap();
+        let var = self.stdvar().unwrap();
+
+        writeln!(f, "# Mean = {}", mean)?;
+        writeln!(f, "# Standard deviation = {}", dev)?;
+        writeln!(f, "# Standard variance = {}", var)?;
+        writeln!(f, "#")?;
+
+        let max_bucket_count = self.into_iter().map(|b| b.count()).fold(0, cmp::max);
+
+        const WIDTH: u64 = 50;
+        let count_per_char = cmp::max(max_bucket_count / WIDTH, 1);
+
+        writeln!(f, "# Each ∎ is a count of {}", count_per_char)?;
+        writeln!(f, "#")?;
+
+        let mut buckets: Vec<_> = self.into_iter().skip_while(|b| b.count == 0).collect();
+        while buckets.last().map_or(false, |b| b.count == 0) {
+            buckets.pop();
+        }
+
+        for Bucket { count, value, width, .. } in buckets {
+            write!(f, "{:>10} - {:>10} [ {:>10} ]: ", value, value + width, count)?;
+            for _ in 0..count / count_per_char {
+                write!(f, "∎")?;
+            }
+            writeln!(f)?;
+        }
+
+        Ok(())
     }
 }
 
