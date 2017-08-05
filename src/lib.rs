@@ -358,7 +358,7 @@ impl fmt::Display for Histogram {
         }
 
         for Bucket { count, value, width, .. } in buckets {
-            write!(f, "{:>10} - {:>10} [ {:>10} ]: ", value, value + width, count)?;
+            write!(f, "{:>10} - {:>10} [ {:>10} ]: ", value - width + 1, value, count)?;
             for _ in 0..count / count_per_char {
                 write!(f, "∎")?;
             }

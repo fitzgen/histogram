@@ -16,3 +16,14 @@ readme = "README.md"
 keywords = [ "histogram", "percentile", "statistics", "stats" ]
 
 categories = [ "data-structures" ]
+
+[features]
+default = ["bin"]
+
+# This feature provides the `histogram` binary, which reads data from stdin, and
+# then prints a histogram of it to stdout.
+bin = []
+
+[[bin]]
+name = "histogram"
+required-features = ["bin"]
